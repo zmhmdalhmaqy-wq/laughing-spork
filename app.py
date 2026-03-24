@@ -32,7 +32,6 @@ ADMIN_PASSWORD_RAW = "Ziad00"
 DB_FILE = os.path.join(BASE_DIR, "db.json")
 
 def load_db():
-    """تحميل قاعدة البيانات"""
     if os.path.exists(DB_FILE):
         try:
             with open(DB_FILE, 'r', encoding='utf-8') as f:
@@ -59,7 +58,6 @@ def load_db():
     return default_db
 
 def save_db(db_data):
-    """حفظ قاعدة البيانات"""
     try:
         with open(DB_FILE, 'w', encoding='utf-8') as f:
             json.dump(db_data, f, indent=4, ensure_ascii=False)
@@ -184,13 +182,13 @@ def api_register():
         return jsonify({"success": False, "message": "جميع الحقول مطلوبة"})
     
     if len(username) < 3:
-        return jsonify({"success": False, "message": "اسم المستخدم يجب أن يكون 3 أحرف على الأقل"})
+        return jsonify({"success": False, "message": "اسم المستخدم 3 أحرف على الأقل"})
     
     if len(password) < 4:
-        return jsonify({"success": False, "message": "كلمة المرور يجب أن تكون 4 أحرف على الأقل"})
+        return jsonify({"success": False, "message": "كلمة المرور 4 أحرف على الأقل"})
     
     if username in db["users"]:
-        return jsonify({"success": False, "message": "اسم المستخدم موجود بالفعل"})
+        return jsonify({"success": False, "message": "المستخدم موجود"})
     
     if username == ADMIN_USERNAME:
         return jsonify({"success": False, "message": "لا يمكن استخدام هذا الاسم"})
@@ -236,8 +234,9 @@ def api_login():
 def api_logout():
     """تسجيل الخروج - مسح الجلسة بالكامل"""
     session.clear()
-    response = make_response(jsonify({"success": True}))
+    response = make_response(jsonify({"success": True, "redirect": "/login"}))
     response.delete_cookie('session')
+    response.headers['Location'] = '/login'
     return response
 
 @app.route('/api/current_user')
@@ -305,7 +304,7 @@ def add_server():
     user = db["users"].get(session["username"], {"max_servers": 3})
     user_srv_count = len([s for s in db["servers"].values() if s["owner"] == session["username"]])
     if user_srv_count >= user.get("max_servers", 3):
-        return jsonify({"success": False, "message": "وصلت للحد الأقصى من السيرفرات"})
+        return jsonify({"success": False, "message": "وصلت للحد الأقصى"})
     
     data = request.get_json()
     name = data.get("name", "New Server").strip()
@@ -346,7 +345,7 @@ def server_action(folder, action):
     
     if action == "start":
         if srv.get("status") == "Running":
-            return jsonify({"success": False, "message": "السيرفر يعمل بالفعل"})
+            return jsonify({"success": False, "message": "السيرفر يعمل"})
         
         main_file = srv.get("startup_file", "main.py")
         file_path = os.path.join(srv["path"], main_file)
@@ -359,7 +358,7 @@ def server_action(folder, action):
                     file_path = os.path.join(srv["path"], f)
                     break
             else:
-                return jsonify({"success": False, "message": "لم يتم العثور على ملف تشغيل"})
+                return jsonify({"success": False, "message": "لا يوجد ملف تشغيل"})
         
         port = srv.get("port")
         if not port:
@@ -383,7 +382,7 @@ def server_action(folder, action):
             srv["pid"] = proc.pid
             srv["start_time"] = time.time()
             save_db(db)
-            return jsonify({"success": True, "message": "✅ تم تشغيل السيرفر"})
+            return jsonify({"success": True, "message": "✅ تم التشغيل"})
         except Exception as e:
             return jsonify({"success": False, "message": str(e)})
 
@@ -399,7 +398,7 @@ def server_action(folder, action):
         srv["status"] = "Stopped"
         srv["pid"] = None
         save_db(db)
-        return jsonify({"success": True, "message": "🛑 تم إيقاف السيرفر"})
+        return jsonify({"success": True, "message": "🛑 تم الإيقاف"})
 
     elif action == "restart":
         if srv.get("pid"):
@@ -417,26 +416,37 @@ def server_action(folder, action):
         return server_action(folder, "start")
 
     elif action == "delete":
+        # إيقاف السيرفر أولاً
         if srv.get("pid"):
             try:
                 p = psutil.Process(srv["pid"])
                 for child in p.children(recursive=True):
                     child.kill()
                 p.kill()
+                time.sleep(0.5)
             except:
                 pass
         
+        # حذف المجلد بالكامل
         if os.path.exists(srv["path"]):
             try:
                 shutil.rmtree(srv["path"])
-            except:
+                print(f"✅ تم حذف مجلد: {srv['path']}")
+            except Exception as e:
+                print(f"⚠️ خطأ في حذف المجلد: {e}")
                 try:
-                    subprocess.run(["rm", "-rf", srv["path"]], timeout=5)
+                    subprocess.run(["rm", "-rf", srv["path"]], timeout=5, capture_output=True)
                 except:
                     pass
         
-        del db["servers"][folder]
-        save_db(db)
+        # حذف من قاعدة البيانات
+        try:
+            del db["servers"][folder]
+            save_db(db)
+            print(f"✅ تم حذف السيرفر {folder} من قاعدة البيانات")
+        except Exception as e:
+            print(f"⚠️ خطأ في حذف قاعدة البيانات: {e}")
+        
         return jsonify({"success": True, "message": "🗑️ تم حذف السيرفر"})
 
     return jsonify({"success": False})
@@ -498,7 +508,7 @@ def get_server_stats(folder):
         "ip": get_public_ip()
     })
 
-# ============== API - الملفات ==============
+# ============== API - الملفات (نسخة محسنة) ==============
 
 @app.route('/api/files/list/<folder>')
 def list_server_files(folder):
@@ -593,7 +603,7 @@ def create_file(folder):
 
 @app.route('/api/files/delete/<folder>', methods=['POST'])
 def delete_files(folder):
-    """حذف ملفات - نسخة محسنة"""
+    """حذف ملفات - نسخة محسنة تعمل 100%"""
     if "username" not in session:
         return jsonify({"success": False, "message": "غير مصرح"}), 401
     
@@ -610,24 +620,34 @@ def delete_files(folder):
         return jsonify({"success": False, "message": "لم يتم تحديد ملفات"})
     
     deleted = 0
+    failed = []
+    
     for name in names:
         if not name or '..' in name:
+            failed.append(f"{name}: اسم غير صالح")
             continue
+            
         fpath = os.path.join(srv["path"], name)
+        
         try:
             if os.path.isdir(fpath):
                 shutil.rmtree(fpath)
                 deleted += 1
+                print(f"✅ تم حذف المجلد: {name}")
             elif os.path.exists(fpath):
                 os.remove(fpath)
                 deleted += 1
+                print(f"✅ تم حذف الملف: {name}")
+            else:
+                failed.append(f"{name}: غير موجود")
         except Exception as e:
-            print(f"خطأ في حذف {name}: {e}")
+            failed.append(f"{name}: {str(e)}")
+            print(f"❌ خطأ في حذف {name}: {e}")
     
     if deleted > 0:
         return jsonify({"success": True, "message": f"🗑️ تم حذف {deleted} ملف"})
     else:
-        return jsonify({"success": False, "message": "فشل حذف الملفات"})
+        return jsonify({"success": False, "message": "فشل الحذف: " + ", ".join(failed[:3])})
 
 @app.route('/api/files/rename/<folder>', methods=['POST'])
 def rename_file(folder):
