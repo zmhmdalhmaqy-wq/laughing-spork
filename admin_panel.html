@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لوحة المسؤول — DARK PRO HOST</title>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Tajawal', sans-serif;
+            background: linear-gradient(135deg, #f5f7ff 0%, #eef2ff 100%);
+            min-height: 100vh;
+            color: #1e293b;
+        }
+        #stars-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            pointer-events: none;
+            opacity: 0.3;
+        }
+        .topbar, .container { position: relative; z-index: 1; }
+        .topbar {
+            background: white;
+            border-bottom: 2px solid #e2e8f0;
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.02);
+        }
+        .logo { font-size: 20px; font-weight: 900; color: #3b82f6; }
+        .topbar-right { display: flex; gap: 15px; align-items: center; }
+        .btn-logout {
+            background: #fee2e2;
+            border: 2px solid #ef4444;
+            color: #dc2626;
+            padding: 8px 18px;
+            border-radius: 40px;
+            cursor: pointer;
+            font-weight: 700;
+            font-family: 'Tajawal', sans-serif;
+            transition: all 0.3s;
+        }
+        .btn-logout:hover { background: #fecaca; transform: translateY(-1px); }
+        .container { max-width: 1400px; margin: 0 auto; padding: 30px; }
+        .tabs { display: flex; gap: 10px; margin-bottom: 30px; flex-wrap: wrap; }
+        .tab-btn {
+            background: white;
+            border: 2px solid #e2e8f0;
+            color: #64748b;
+            padding: 12px 28px;
+            border-radius: 40px;
+            cursor: pointer;
+            font-weight: 700;
+            transition: all 0.3s;
+            font-family: 'Tajawal', sans-serif;
+        }
+        .tab-btn.active {
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            color: white;
+            border-color: transparent;
+        }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .card {
+            background: white;
+            border-radius: 24px;
+            padding: 30px;
+            margin-bottom: 25px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.03);
+            border: 1px solid #e2e8f0;
+        }
+        .card-title {
+            font-size: 18px;
+            font-weight: 800;
+            color: #0f172a;
+            margin-bottom: 20px;
+            border-right: 4px solid #3b82f6;
+            padding-right: 12px;
+        }
+        .form-group { margin-bottom: 20px; }
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #475569;
+            font-weight: 600;
+            font-size: 13px;
+        }
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 12px 16px;
+            background: #f8fafc;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            color: #1e293b;
+            font-size: 13px;
+            outline: none;
+            font-family: 'Tajawal', sans-serif;
+            transition: all 0.3s;
+        }
+        .form-group input:focus, .form-group select:focus {
+            border-color: #3b82f6;
+            background: white;
+        }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .btn-primary {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            border: none;
+            border-radius: 12px;
+            color: white;
+            font-weight: 800;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: 'Tajawal', sans-serif;
+        }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 10px 25px rgba(59,130,246,0.3); }
+        .users-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .users-table th {
+            background: #f8fafc;
+            padding: 14px;
+            text-align: right;
+            border-bottom: 2px solid #e2e8f0;
+            font-weight: 800;
+            color: #1e293b;
+        }
+        .users-table td {
+            padding: 14px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .users-table tr:hover td { background: #f8fafc; }
+        .user-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 40px;
+            font-size: 11px;
+            font-weight: 700;
+        }
+        .user-badge.admin { background: #fef3c7; color: #f59e0b; }
+        .user-badge.user { background: #dbeafe; color: #3b82f6; }
+        .btn-action {
+            padding: 6px 14px;
+            border: none;
+            border-radius: 40px;
+            cursor: pointer;
+            font-size: 11px;
+            font-weight: 700;
+            font-family: 'Tajawal', sans-serif;
+            transition: all 0.2s;
+        }
+        .btn-edit { background: #dbeafe; color: #3b82f6; }
+        .btn-delete { background: #fee2e2; color: #ef4444; }
+        .btn-upgrade { background: #fef3c7; color: #f59e0b; }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .stat-card {
+            background: white;
+            border: 1px solid #e2e8f0;
+            padding: 20px;
+            border-radius: 20px;
+            text-align: center;
+        }
+        .stat-value { font-size: 28px; font-weight: 900; color: #3b82f6; }
+        .stat-label { color: #64748b; font-size: 12px; margin-top: 5px; }
+        .search-box {
+            width: 100%;
+            padding: 12px 16px;
+            background: #f8fafc;
+            border: 2px solid #e2e8f0;
+            border-radius: 40px;
+            margin-bottom: 20px;
+            font-family: 'Tajawal', sans-serif;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal.active { display: flex; }
+        .modal-box {
+            background: white;
+            border-radius: 28px;
+            padding: 30px;
+            width: 90%;
+            max-width: 500px;
+        }
+        .modal-title { font-size: 18px; font-weight: 800; margin-bottom: 20px; color: #0f172a; }
+        .alert {
+            padding: 12px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            font-size: 13px;
+        }
+        .alert-success { background: #dcfce7; border: 1px solid #22c55e; color: #16a34a; }
+        .alert-error { background: #fee2e2; border: 1px solid #ef4444; color: #dc2626; }
+        @media (max-width: 768px) {
+            .form-row { grid-template-columns: 1fr; }
+            .stats-grid { grid-template-columns: 1fr; }
+            .tabs { flex-direction: column; }
+            .users-table { display: block; overflow-x: auto; }
+        }
+    </style>
+</head>
+<body>
+    <canvas id="stars-canvas"></canvas>
+    <div class="topbar">
+        <div class="logo">⭐ لوحة المسؤول — DARK BRO HOST</div>
+        <div class="topbar-right">
+            <span style="color: #64748b;">مرحباً، <strong id="adminName">DARK</strong></span>
+            <button class="btn-logout" onclick="logout()">تسجيل الخروج</button>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab('dashboard')">📊 لوحة التحكم</button>
+            <button class="tab-btn" onclick="switchTab('users')">👥 إدارة المستخدمين</button>
+            <button class="tab-btn" onclick="switchTab('servers')">🖥️ السيرفرات</button>
+            <button class="tab-btn" onclick="switchTab('settings')">⚙️ الإعدادات</button>
+        </div>
+
+        <!-- Dashboard Tab -->
+        <div id="dashboardTab" class="tab-content active">
+            <div class="stats-grid">
+                <div class="stat-card"><div class="stat-value" id="totalUsers">0</div><div class="stat-label">إجمالي المستخدمين</div></div>
+                <div class="stat-card"><div class="stat-value" id="totalServers">0</div><div class="stat-label">إجمالي السيرفرات</div></div>
+                <div class="stat-card"><div class="stat-value" id="activeServers">0</div><div class="stat-label">السيرفرات النشطة</div></div>
+                <div class="stat-card"><div class="stat-value" id="systemUptime">99.9%</div><div class="stat-label">توفر الخدمة</div></div>
+            </div>
+            <div class="card"><div class="card-title">📈 آخر الأنشطة</div><p style="color:#64748b;">تم تحديث لوحة التحكم في <span id="lastUpdate">الآن</span></p></div>
+        </div>
+
+        <!-- Users Tab -->
+        <div id="usersTab" class="tab-content">
+            <div class="card">
+                <div class="card-title">➕ إضافة مستخدم جديد</div>
+                <div id="userAlert"></div>
+                <div class="form-row">
+                    <div class="form-group"><label>اسم المستخدم</label><input type="text" id="newUsername" placeholder="أدخل اسم المستخدم"></div>
+                    <div class="form-group"><label>كلمة المرور</label><input type="password" id="newPassword" placeholder="أدخل كلمة المرور"></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label>عدد السيرفرات المسموح بها</label><input type="number" id="maxServers" placeholder="مثال: 1" min="1" max="999" value="1"></div>
+                    <div class="form-group"><label>عدد الأيام (الصلاحية)</label><input type="number" id="expiryDays" placeholder="مثال: 30" min="1" max="365" value="30"></div>
+                </div>
+                <div class="form-group"><label>الخطة</label>
+                    <select id="userPlan">
+                        <option value="free">🌟 مجاني (1 سيرفر)</option>
+                        <option value="basic">⚡ أساسي (3 سيرفرات)</option>
+                        <option value="pro">💎 احترافي (10 سيرفرات)</option>
+                        <option value="king">👑 ملكي (غير محدود)</option>
+                    </select>
+                </div>
+                <button class="btn-primary" onclick="createNewUser()">✨ إنشاء الحساب</button>
+            </div>
+
+            <div class="card">
+                <div class="card-title">📋 قائمة المستخدمين</div>
+                <input type="text" class="search-box" id="userSearch" placeholder="ابحث عن مستخدم...">
+                <table class="users-table">
+                    <thead><tr><th>اسم المستخدم</th><th>النوع</th><th>السيرفرات</th><th>الصلاحية</th><th>الخطة</th><th>الإجراءات</th></tr></thead>
+                    <tbody id="usersList"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Servers Tab -->
+        <div id="serversTab" class="tab-content">
+            <div class="card">
+                <div class="card-title">🖥️ إدارة السيرفرات</div>
+                <table class="users-table">
+                    <thead><tr><th>اسم السيرفر</th><th>المالك</th><th>الحالة</th><th>البورت</th><th>الإجراءات</th></tr></thead>
+                    <tbody id="serversList"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Settings Tab -->
+        <div id="settingsTab" class="tab-content">
+            <div class="card"><div class="card-title">⚙️ إعدادات النظام</div>
+                <div class="form-group"><label>اسم الموقع</label><input type="text" value="DARK BRO HOST" readonly></div>
+                <div class="form-group"><label>الإصدار</label><input type="text" value="v3.0.0" readonly></div>
+                <div class="form-group"><label>الحد الأقصى للسيرفرات الافتراضي</label><input type="number" id="defaultMaxServers" value="1" min="1" max="100"></div>
+                <button class="btn-primary" onclick="saveSettings()">💾 حفظ الإعدادات</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal for editing user -->
+    <div class="modal" id="editUserModal">
+        <div class="modal-box">
+            <div class="modal-title">✏️ تعديل المستخدم</div>
+            <input type="hidden" id="editUsername">
+            <div class="form-group"><label>عدد السيرفرات المسموح بها</label><input type="number" id="editMaxServers" min="1" max="999"></div>
+            <div class="form-group"><label>عدد الأيام المتبقية</label><input type="number" id="editExpiryDays" min="1" max="365"></div>
+            <div class="form-group"><label>الخطة</label>
+                <select id="editPlan">
+                    <option value="free">🌟 مجاني</option>
+                    <option value="basic">⚡ أساسي</option>
+                    <option value="pro">💎 احترافي</option>
+                    <option value="king">👑 ملكي</option>
+                </select>
+            </div>
+            <div class="form-row" style="gap: 10px; margin-top: 20px;">
+                <button class="btn-primary" onclick="updateUser()">💾 حفظ التعديلات</button>
+                <button class="btn-logout" onclick="closeEditModal()" style="background:#f1f5f9; color:#475569;">إلغاء</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentEditUser = null;
+
+        function switchTab(tab) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+            document.getElementById(tab + 'Tab').classList.add('active');
+            event.target.classList.add('active');
+            if (tab === 'users') loadUsers();
+            if (tab === 'servers') loadServers();
+            if (tab === 'dashboard') loadDashboard();
+        }
+
+        async function loadDashboard() {
+            const res = await fetch('/api/admin/users');
+            const data = await res.json();
+            if (data.users) {
+                document.getElementById('totalUsers').textContent = data.users.length;
+                let totalServers = 0;
+                let activeServers = 0;
+                // يمكن إضافة إحصائيات السيرفرات لاحقاً
+                document.getElementById('totalServers').textContent = '0';
+                document.getElementById('activeServers').textContent = '0';
+            }
+            document.getElementById('lastUpdate').textContent = new Date().toLocaleTimeString('ar-SA');
+        }
+
+        async function loadUsers() {
+            const res = await fetch('/api/admin/users');
+            const data = await res.json();
+            const list = document.getElementById('usersList');
+            const search = document.getElementById('userSearch').value.toLowerCase();
+            let filtered = data.users;
+            if (search) filtered = filtered.filter(u => u.username.toLowerCase().includes(search));
+            
+            list.innerHTML = filtered.map(u => `
+                <tr>
+                    <td><strong>${escapeHtml(u.username)}</strong></td>
+                    <td><span class="user-badge ${u.is_admin ? 'admin' : 'user'}">${u.is_admin ? '👑 مسؤول' : '👤 مستخدم'}</span></td>
+                    <td>${u.max_servers}</td>
+                    <td style="font-size:12px;">${u.expiry_days} يوم</td>
+                    <td><span class="user-badge" style="background:#fef3c7;">${u.plan_name || u.plan}</span></td>
+                    <td>
+                        ${u.username !== 'Ziad00' ? `
+                            <button class="btn-action btn-upgrade" onclick="openEditModal('${u.username}', ${u.max_servers}, ${u.expiry_days}, '${u.plan}')">🔧 ترقية</button>
+                            <button class="btn-action btn-delete" onclick="deleteUser('${u.username}')">🗑️ حذف</button>
+                        ` : '<span style="color:#94a3b8;">محمي</span>'}
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        async function loadServers() {
+            document.getElementById('serversList').innerHTML = '<tr><td colspan="5" style="text-align:center; color:#64748b;">جاري التحميل...</td></tr>';
+            // يمكن إضافة بيانات السيرفرات هنا
+            document.getElementById('serversList').innerHTML = '<tr><td colspan="5" style="text-align:center; color:#64748b;">لا توجد بيانات متاحة</td></tr>';
+        }
+
+        async function createNewUser() {
+            const username = document.getElementById('newUsername').value.trim();
+            const password = document.getElementById('newPassword').value.trim();
+            const max_servers = parseInt(document.getElementById('maxServers').value) || 1;
+            const expiry_days = parseInt(document.getElementById('expiryDays').value) || 30;
+            const plan = document.getElementById('userPlan').value;
+
+            if (!username) { showAlert('userAlert', '⚠️ الرجاء إدخال اسم المستخدم', 'error'); return; }
+            if (!password) { showAlert('userAlert', '⚠️ الرجاء إدخال كلمة المرور', 'error'); return; }
+
+            try {
+                const res = await fetch('/api/admin/create-user', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({username, password, max_servers, expiry_days, plan})
+                });
+                const data = await res.json();
+                if (data.success) {
+                    showAlert('userAlert', '✅ تم إنشاء الحساب بنجاح!', 'success');
+                    document.getElementById('newUsername').value = '';
+                    document.getElementById('newPassword').value = '';
+                    document.getElementById('maxServers').value = '1';
+                    document.getElementById('expiryDays').value = '30';
+                    document.getElementById('userPlan').value = 'free';
+                    loadUsers();
+                } else {
+                    showAlert('userAlert', '❌ ' + (data.message || 'حدث خطأ'), 'error');
+                }
+            } catch(e) {
+                showAlert('userAlert', '❌ خطأ في الاتصال', 'error');
+            }
+        }
+
+        function openEditModal(username, maxServers, expiryDays, plan) {
+            currentEditUser = username;
+            document.getElementById('editUsername').value = username;
+            document.getElementById('editMaxServers').value = maxServers;
+            document.getElementById('editExpiryDays').value = expiryDays;
+            document.getElementById('editPlan').value = plan;
+            document.getElementById('editUserModal').classList.add('active');
+        }
+
+        function closeEditModal() {
+            document.getElementById('editUserModal').classList.remove('active');
+            currentEditUser = null;
+        }
+
+        async function updateUser() {
+            const username = document.getElementById('editUsername').value;
+            const max_servers = parseInt(document.getElementById('editMaxServers').value);
+            const expiry_days = parseInt(document.getElementById('editExpiryDays').value);
+            const plan = document.getElementById('editPlan').value;
+
+            try {
+                const res = await fetch('/api/admin/update-user', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({username, max_servers, expiry_days, plan})
+                });
+                const data = await res.json();
+                if (data.success) {
+                    showAlert('userAlert', '✅ تم تحديث بيانات المستخدم', 'success');
+                    closeEditModal();
+                    loadUsers();
+                } else {
+                    showAlert('userAlert', '❌ ' + (data.message || 'حدث خطأ'), 'error');
+                }
+            } catch(e) {
+                showAlert('userAlert', '❌ خطأ في الاتصال', 'error');
+            }
+        }
+
+        async function deleteUser(username) {
+            if (!confirm(`⚠️ هل أنت متأكد من حذف المستخدم "${username}"؟\nسيتم حذف جميع سيرفراته نهائياً!`)) return;
+            const res = await fetch('/api/admin/delete-user', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({username})
+            });
+            const data = await res.json();
+            if (data.success) {
+                showAlert('userAlert', data.message, 'success');
+                loadUsers();
+            } else {
+                showAlert('userAlert', '❌ ' + (data.message || 'فشل الحذف'), 'error');
+            }
+        }
+
+        async function saveSettings() {
+            showAlert('userAlert', '✅ تم حفظ الإعدادات', 'success');
+        }
+
+        function showAlert(elementId, message, type) {
+            const el = document.getElementById(elementId);
+            el.innerHTML = `<div class="alert alert-${type}">${message}</div>`;
+            setTimeout(() => el.innerHTML = '', 5000);
+        }
+
+        function logout() {
+            fetch('/api/logout', {method: 'POST'})
+                .then(() => {
+                    sessionStorage.clear();
+                    localStorage.removeItem('remember_token');
+                    window.location.replace('/login');
+                })
+                .catch(() => window.location.replace('/login'));
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+        }
+
+        document.getElementById('userSearch').addEventListener('input', () => loadUsers());
+        loadDashboard();
+        loadUsers();
+
+        // خلفية النجوم
+        (function() {
+            const canvas = document.getElementById('stars-canvas');
+            const ctx = canvas.getContext('2d');
+            let stars = [];
+            const NUM_STARS = 120;
+
+            function resize() {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+            }
+
+            function initStars() {
+                stars = [];
+                for (let i = 0; i < NUM_STARS; i++) {
+                    stars.push({
+                        x: Math.random() * canvas.width,
+                        y: Math.random() * canvas.height,
+                        r: Math.random() * 1.5 + 0.5,
+                        alpha: Math.random() * 0.4 + 0.2,
+                        speed: Math.random() * 0.15 + 0.03,
+                        twinkle: Math.random() * Math.PI * 2
+                    });
+                }
+            }
+
+            function drawStars() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = '#f5f7ff';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                stars.forEach(s => {
+                    s.twinkle += 0.02;
+                    const alpha = s.alpha * (0.5 + 0.5 * Math.sin(s.twinkle));
+                    ctx.beginPath();
+                    ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+                    ctx.fillStyle = `rgba(59, 130, 246, ${alpha * 0.3})`;
+                    ctx.fill();
+                    s.y += s.speed;
+                    if (s.y > canvas.height) {
+                        s.y = 0;
+                        s.x = Math.random() * canvas.width;
+                    }
+                });
+            }
+
+            function animate() {
+                drawStars();
+                requestAnimationFrame(animate);
+            }
+
+            window.addEventListener('resize', () => { resize(); initStars(); });
+            resize();
+            initStars();
+            animate();
+        })();
+    </script>
+</body>
+</html>
